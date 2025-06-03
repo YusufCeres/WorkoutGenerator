@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Workout Plan Generator</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #f72585;
+      --accent: #4cc9f0;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --light-gray: #e9ecef;
+      --border-radius: 12px;
+      --shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #f0f2f5 0%, #dfe3e8 100%);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--dark);
+    }
+    
+    .container {
+      max-width: 900px;
+      width: 100%;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 30px;
+      margin: 20px auto;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    
+    .logo {
+      font-size: 2.8rem;
+      margin-bottom: 15px;
+      color: var(--primary);
+    }
+    
+    h1 {
+      color: var(--primary);
+      font-size: 2.6rem;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    
+    .subtitle {
+      color: var(--gray);
+      font-size: 1.15rem;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    
+    .input-card {
+      background: var(--light);
+      border-radius: var(--border-radius);
+      padding: 25px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    
+    .card-header i {
+      background: var(--primary);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      font-size: 1.1rem;
+    }
+    
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--dark);
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: var(--dark);
+      font-size: 1.1rem;
+    }
+    
+    textarea {
+      width: 100%;
+      padding: 18px;
+      border: 2px solid var(--light-gray);
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      resize: vertical;
+      min-height: 140px;
+      transition: all 0.3s;
+      line-height: 1.5;
+      background: white;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.15);
+    }
+    
+    .examples {
+      margin-top: 15px;
+      padding: 15px;
+      background: rgba(67, 97, 238, 0.05);
+      border-radius: var(--border-radius);
+      border-left: 4px solid var(--primary);
+    }
+    
+    .examples-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+    }
+    
+    .examples-title i {
+      margin-right: 8px;
+    }
+    
+    .example-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .example-chip {
+      background: rgba(67, 97, 238, 0.1);
+      color: var(--primary);
+      padding: 8px 15px;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid rgba(67, 97, 238, 0.15);
+    }
+    
+    .example-chip:hover {
+      background: rgba(67, 97, 238, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      font-size: 1.2rem;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-3px);
+      box-shadow: 0 7px 20px rgba(67, 97, 238, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(1px);
+    }
+    
+    button:disabled {
+      background: #a0a0a0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      opacity: 0.8;
+    }
+    
+    .output-card {
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+      background: white;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .output-header {
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      color: white;
+      padding: 18px 25px;
+      font-weight: 600;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    #output {
+      background: white;
+      padding: 25px;
+      min-height: 280px;
+      white-space: pre-wrap;
+      line-height: 1.7;
+      font-size: 1.05rem;
+      color: var(--dark);
+      overflow-x: auto;
+    }
+    
+    .placeholder-text {
+      color: var(--gray);
+      font-style: italic;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 50px 0;
+    }
+    
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid rgba(67, 97, 238, 0.2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1.2s linear infinite;
+      margin-bottom: 25px;
+    }
+    
+    .loading-text {
+      font-size: 1.2rem;
+      color: var(--primary);
+      font-weight: 500;
+      text-align: center;
+    }
+    
+    .loading-subtext {
+      color: var(--gray);
+      margin-top: 10px;
+      max-width: 500px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error {
+      color: #e63946;
+      background: #ffeef0;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      margin: 20px 0;
+      border-left: 4px solid #e63946;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .error i {
+      font-size: 1.4rem;
+      margin-top: 3px;
+    }
+    
+    .error-content {
+      flex: 1;
+    }
+    
+    .error-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .success-output {
+      padding: 20px 0;
+      line-height: 1.8;
+    }
+    
+    .success-output h3 {
+      color: var(--primary);
+      margin: 20px 0 10px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--light-gray);
+    }
+    
+    .success-output ul {
+      padding-left: 25px;
+      margin: 15px 0;
+    }
+    
+    .success-output li {
+      margin-bottom: 10px;
+    }
+    
+    .model-info {
+      background: rgba(76, 201, 240, 0.1);
+      color: var(--accent);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-bottom: 15px;
+      text-align: center;
+      border: 1px solid rgba(76, 201, 240, 0.2);
+    }
+    
+    .test-models-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: all 0.2s;
+    }
+    
+    .test-models-btn:hover {
+      background: #3bb3e0;
+    }
+    
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      color: var(--gray);
+      font-size: 0.95rem;
+      width: 100%;
+      padding: 20px;
+    }
+    
+    .footer-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .footer-logo {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 25px 20px;
+      }
+      
+      h1 {
+        font-size: 2.2rem;
+      }
+      
+      .subtitle {
+        font-size: 1.05rem;
+      }
+      
+      .input-card {
+        padding: 20px;
+      }
+      
+      .card-title {
+        font-size: 1.25rem;
+      }
+      
+      button {
+        padding: 14px 20px;
+        font-size: 1.1rem;
+      }
+      
+      .output-header {
+        padding: 15px 20px;
+        font-size: 1.15rem;
+      }
+      
+      #output {
+        padding: 20px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 15px;
+      }
+      
+      .container {
+        padding: 20px 15px;
+      }
+      
+      h1 {
+        font-size: 1.9rem;
+      }
+      
+      .logo {
+        font-size: 2.3rem;
+      }
+      
+      .card-header i {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+      }
+      
+      textarea {
+        padding: 15px;
+        min-height: 120px;
+      }
+      
+      .example-list {
+        flex-direction: column;
+      }
+      
+      .example-chip {
+        width: 100%;
+        text-align: center;
+      }
+      
+      .test-models-btn {
+        display: block;
+        margin: 10px auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <i class="fas fa-dumbbell"></i>
+      </div>
+      <h1>AI Workout Generator</h1>
+      <p class="subtitle">Get personalized workout plans generated by artificial intelligence. Just describe your fitness goals and receive a custom plan instantly.</p>
+      <button class="test-models-btn" onclick="testModels()">Test AI Models</button>
+    </header>
+    
+    <div class="input-card">
+      <div class="card-header">
+        <i class="fas fa-edit"></i>
+        <h2 class="card-title">Describe Your Fitness Goals</h2>
+      </div>
+      
+      <label for="prompt">What kind of workout plan do you need?</label>
+      <textarea 
+        id="prompt" 
+        placeholder="Example: Create a 4-week strength training program for intermediate level with 4 sessions per week. Focus on compound movements with barbells and dumbbells. Include 2 rest days."></textarea>
+      
+      <div class="examples">
+        <div class="examples-title">
+          <i class="fas fa-lightbulb"></i>
+          Need inspiration? Try these examples:
+        </div>
+        <div class="example-list">
+          <div class="example-chip" onclick="useExample(this)">7-day cardio plan with no equipment</div>
+          <div class="example-chip" onclick="useExample(this)">4-week muscle building for beginners</div>
+          <div class="example-chip" onclick="useExample(this)">30-minute HIIT routine for weight loss</div>
+          <div class="example-chip" onclick="useExample(this)">Yoga plan for flexibility improvement</div>
+        </div>
+      </div>
+    </div>
+    
+    <button id="generateBtn" onclick="generate()">
+      <i class="fas fa-bolt"></i>
+      Generate Workout Plan
+    </button>
+    
+    <div class="output-card">
+      <div class="output-header">
+        <i class="fas fa-clipboard-list"></i>
+        Your Custom Workout Plan
+      </div>
+      <pre id="output"><div class="placeholder-text">Your generated workout plan will appear here</div></pre>
+    </div>
+    
+    <footer>
+      <div class="footer-content">
+        <span>Powered by</span>
+        <span class="footer-logo">Hugging Face AI</span>
+        <span>•</span>
+        <span>Workout Generator v1.3</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function useExample(element) {
+      document.getElementById('prompt').value = element.textContent;
+    }
+    
+    async function testModels() {
+      const outputEl = document.getElementById('output');
+      outputEl.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <div class="loading-text">Testing AI Models...</div>
+          <div class="loading-subtext">Checking which models are currently available</div>
+        </div>
+      `;
+      
+      try {
+        const response = await fetch('http://localhost:3000/test-models');
+        const data = await response.json();
+        
+        let resultsHtml = '<div class="success-output"><h3>Model Test Results</h3>';
+        
+        for (const [model, result] of Object.entries(data)) {
+          const status = result.status === 'working' ? '✅' : '❌';
+          resultsHtml += `<p><strong>${status} ${model}</strong><br>`;
+          if (result.status === 'working') {
+            resultsHtml += `Status: Available</p>`;
+          } else {
+            resultsHtml += `Error: ${result.error}</p>`;
+          }
+        }
+        
+        resultsHtml += '</div>';
+        outputEl.innerHTML = resultsHtml;
+        
+      } catch (error) {
+        outputEl.innerHTML = `<div class="error"><i class="fas fa-exclamation-circle"></i><div class="error-content"><div class="error-title">Test Failed</div>${error.message}</div></div>`;
+      }
+    }
+    
+    async function generate() {
+      const prompt = document.getElementById('prompt').value.trim();
+      const outputEl = document.getElementById('output');
+      const button = document.getElementById('generateBtn');
+      
+      if (!prompt) {
+        outputEl.innerHTML = '<div class="error"><i class="fas fa-exclamation-circle"></i><div class="error-content"><div class="error-title">Input Required</div>Please describe your fitness goals to generate a workout plan</div></div>';
+        return;
+      }
+      
+      // Disable button and show loading
+      button.disabled = true;
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+      outputEl.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <div class="loading-text">Creating your personalized workout plan</div>
+          <div class="loading-subtext">Our AI is analyzing your requirements and crafting the perfect fitness routine...</div>
+        </div>
+      `;
+      
+      try {
+        const response = await fetch('http://localhost:3000/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          outputEl.innerHTML = `<div class="error"><i class="fas fa-exclamation-circle"></i><div class="error-content"><div class="error-title">Generation Error</div>${data.error}</div></div>`;
+        } else {
+          // Show model info if available
+          let modelInfo = '';
+          if (data.model_used) {
+            const modelName = data.model_used === 'fallback' ? 'Fallback System' : data.model_used;
+            modelInfo = `<div class="model-info">Generated using: ${modelName}</div>`;
+          }
+          
+          if (data.note) {
+            modelInfo += `<div class="model-info" style="background: rgba(255, 193, 7, 0.1); color: #856404; border-color: rgba(255, 193, 7, 0.3);">${data.note}</div>`;
+          }
+          
+          // Format the output with basic styling
+          const formattedOutput = formatWorkoutOutput(data.generated_text);
+          outputEl.innerHTML = modelInfo + formattedOutput;
+        }
+      } catch (error) {
+        outputEl.innerHTML = `<div class="error"><i class="fas fa-exclamation-circle"></i><div class="error-content"><div class="error-title">Connection Error</div>${error.message}. Please check your connection and try again.</div></div>`;
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-bolt"></i> Generate Workout Plan';
+      }
+    }
+    
+   function formatWorkoutOutput(text) {
+  // Basic formatting for workout plans
+  let formatted = text
+    .replace(/(\n|^)(Day \d+[:\-\s]*[^\n]*)/gi, '<h3>$2</h3>') // Day headers
+    .replace(/(\n|^)(Week \d+[:\-\s]*[^\n]*)/gi, '<h3>$2</h3>') // Week headers
+    .replace(/(\n|^)([A-Z][A-Z\s&,]+:)/g, '<h4>$2</h4>') // Exercise category headers
+    .replace(/•\s*/g, '<li>') // Convert bullets to list items
+    .replace(/(\d+\.\s)/g, '<br><strong>$1</strong>') // Numbered items
+    .replace(/\n\s*\n/g, '<br><br>') // Double line breaks
+    .replace(/\n/g, '<br>'); // Single line breaks
+  
+  // Properly wrap consecutive list items in ul tags
+  formatted = formatted.replace(/(<li>[^<]*(?:<br>)*)+/g, function(match) {
+    return '<ul>' + match.replace(/<li>/g, '<li>').replace(/(<li>[^<]*?)(<br>|$)/g, '$1</li>') + '</ul>';
+  });
+  
+  return `
+    <div class="success-output">
+      ${formatted}
+      <br><br>
+      <div style="text-align: center; color: #4361ee; font-weight: 500; border-top: 1px solid #e9ecef; padding-top: 20px; margin-top: 20px;">
+        <i class="fas fa-heart"></i> Remember to consult with a fitness professional before starting any new workout routine
+      </div>
+    </div>
+  `;
+}
+  </script>
+</body>
+</html>
