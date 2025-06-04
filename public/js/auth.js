@@ -138,9 +138,22 @@ export async function sendVerificationEmail() {
   
   try {
     await sendEmailVerification(window.currentUser);
-    return { success: true, message: 'Verification email sent!' };
+    return { success: true, message: 'Verification email sent! Please check your spam folder if you don\'t see it.' };
   } catch (error) {
-    return { success: false, error: error.message };
+    let friendlyMessage;
+    
+    switch (error.code) {
+      case 'auth/too-many-requests':
+        friendlyMessage = 'Please wait a few minutes before requesting another verification email.';
+        break;
+      case 'auth/user-token-expired':
+        friendlyMessage = 'Session expired. Please log out and log back in.';
+        break;
+      default:
+        friendlyMessage = error.message;
+    }
+    
+    return { success: false, error: friendlyMessage };
   }
 }
 
