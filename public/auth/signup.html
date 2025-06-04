@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - AI Workout Generator</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="logo">
+          <i class="fas fa-dumbbell"></i>
+        </div>
+        <h1>Join Us</h1>
+        <p>Create your account to save and track your workouts</p>
+      </div>
+      
+      <form id="signupForm" class="auth-form">
+        <div class="input-group">
+          <i class="fas fa-user"></i>
+          <input type="text" id="displayName" placeholder="Full Name" required>
+        </div>
+        
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="email" placeholder="Email" required>
+        </div>
+        
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="password" placeholder="Password (min 6 characters)" required minlength="6">
+        </div>
+        
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="confirmPassword" placeholder="Confirm Password" required minlength="6">
+        </div>
+        
+        <button type="submit" class="auth-btn">
+          <i class="fas fa-user-plus"></i>
+          Create Account
+        </button>
+        
+        <div id="errorMessage" class="error-message hidden"></div>
+        <div id="successMessage" class="success-message hidden"></div>
+        
+        <div class="auth-links">
+          <p>Already have an account? <a href="login.html">Sign in here</a></p>
+          <p><a href="../index.html">← Back to Workout Generator</a></p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/auth.js"></script>
+  <script type="module">
+    import { registerUser } from '../js/auth.js';
+    
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const displayName = document.getElementById('displayName').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const errorElement = document.getElementById('errorMessage');
+      const successElement = document.getElementById('successMessage');
+      
+      // Hide previous messages
+      errorElement.classList.add('hidden');
+      successElement.classList.add('hidden');
+      
+      if (password !== confirmPassword) {
+        errorElement.textContent = 'Passwords do not match';
+        errorElement.classList.remove('hidden');
+        return;
+      }
+      
+      try {
+        const result = await registerUser(email, password, displayName);
+        if (result.success) {
+          successElement.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            Account created successfully! Please check your email and verify your account before signing in.
+          `;
+          successElement.classList.remove('hidden');
+          document.getElementById('signupForm').reset();
+        } else {
+          errorElement.textContent = result.error;
+          errorElement.classList.remove('hidden');
+        }
+      } catch (error) {
+        errorElement.textContent = 'An unexpected error occurred';
+        errorElement.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
