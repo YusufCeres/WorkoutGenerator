@@ -26,13 +26,13 @@ import {
 
 // Firebase configuration - Replace with your actual config
 const firebaseConfig = {
-  apiKey: "AIzaSyBjonXbOCwbc3IF3ij-agGIr95HzFBFVt0",
-  authDomain: "ai-workout-generator-40443.firebaseapp.com",
-  projectId: "ai-workout-generator-40443",
-  storageBucket: "ai-workout-generator-40443.firebasestorage.app",
-  messagingSenderId: "546286551368",
-  appId: "1:546286551368:web:b2e731d4e33736dbed337d",
-  measurementId: "G-SDYM76DQZF"
+   apiKey: functions.config().app.api_key,
+  authDomain: functions.config().app.auth_domain,
+  projectId: functions.config().app.project_id,
+  storageBucket: functions.config().app.storage_bucket,
+  messagingSenderId: functions.config().app.messaging_sender_id,
+  appId: functions.config().app.app_id,
+  measurementId: functions.config().app.measurement_id,
 };
 
 // Initialize Firebase
