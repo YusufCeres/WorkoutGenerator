@@ -52,13 +52,50 @@
           <p><a href="../index.html">← Back to Workout Generator</a></p>
         </div>
       </form>
+      
+      <!-- Verification Section (shown after successful signup) -->
+      <div id="verificationSection" class="verification-section hidden">
+        <div class="verification-header">
+          <i class="fas fa-envelope-open"></i>
+          <h2>Check Your Email</h2>
+          <p>We've sent a verification link to your email address. Please check your inbox and spam folder.</p>
+        </div>
+        
+        <div class="verification-actions">
+          <p>Didn't receive the email?</p>
+          <button id="resendVerificationBtn" class="resend-btn">
+            <i class="fas fa-paper-plane"></i>
+            Resend Verification Email
+          </button>
+          <div id="countdownTimer" class="countdown-timer hidden">
+            <i class="fas fa-clock"></i>
+            <span>You can resend in <span id="countdownSeconds">60</span> seconds</span>
+          </div>
+        </div>
+        
+        <div id="resendSuccess" class="success-message hidden"></div>
+        <div id="resendError" class="error-message hidden"></div>
+        
+        <div class="auth-links">
+          <p><a href="login.html">← Back to Sign In</a></p>
+        </div>
+      </div>
     </div>
   </div>
 
   <script type="module" src="../js/firebase-config.js"></script>
   <script type="module" src="../js/auth.js"></script>
   <script type="module">
-    import { registerUser } from '../js/auth.js';
+    import { registerUser, sendVerificationEmail } from '../js/auth.js';
+    
+    // Global state for resend functionality
+    let lastRegisteredUser = null;
+    let resendAttempts = 0;
+    let resendTimeoutId = null;
+    let countdownIntervalId = null;
+    
+    // Base wait time in seconds (starts at 60 seconds)
+    const BASE_WAIT_TIME = 60;
     
     document.getElementById('signupForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -83,12 +120,17 @@
       try {
         const result = await registerUser(email, password, displayName);
         if (result.success) {
-          successElement.innerHTML = `
-            <i class="fas fa-check-circle"></i>
-            Account created successfully! Please check your email and verify your account before signing in.
-          `;
-          successElement.classList.remove('hidden');
-          document.getElementById('signupForm').reset();
+          // Store user info for resend functionality
+          lastRegisteredUser = { email, password };
+          resendAttempts = 0;
+          
+          // Hide signup form and show verification section
+          document.getElementById('signupForm').classList.add('hidden');
+          document.getElementById('verificationSection').classList.remove('hidden');
+          
+          // Start countdown timer
+          startResendCountdown();
+          
         } else {
           errorElement.textContent = result.error;
           errorElement.classList.remove('hidden');
@@ -98,6 +140,178 @@
         errorElement.classList.remove('hidden');
       }
     });
+    
+    // Handle resend verification email
+    document.getElementById('resendVerificationBtn').addEventListener('click', async () => {
+      const resendBtn = document.getElementById('resendVerificationBtn');
+      const resendSuccess = document.getElementById('resendSuccess');
+      const resendError = document.getElementById('resendError');
+      
+      // Clear previous messages
+      resendSuccess.classList.add('hidden');
+      resendError.classList.add('hidden');
+      
+      // Show loading state
+      resendBtn.disabled = true;
+      resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+      
+      try {
+        // Re-register user to get fresh user object for verification
+        const result = await registerUser(lastRegisteredUser.email, lastRegisteredUser.password, '');
+        
+        if (result.success) {
+          resendSuccess.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            Verification email sent! Please check your inbox and spam folder.
+          `;
+          resendSuccess.classList.remove('hidden');
+          
+          // Increment attempts and start countdown
+          resendAttempts++;
+          startResendCountdown();
+          
+        } else {
+          // If user already exists, that's expected - just show success
+          if (result.error.includes('already exists')) {
+            resendSuccess.innerHTML = `
+              <i class="fas fa-check-circle"></i>
+              Verification email sent! Please check your inbox and spam folder.
+            `;
+            resendSuccess.classList.remove('hidden');
+            
+            resendAttempts++;
+            startResendCountdown();
+          } else {
+            resendError.textContent = result.error;
+            resendError.classList.remove('hidden');
+          }
+        }
+      } catch (error) {
+        resendError.textContent = 'Failed to resend verification email. Please try again.';
+        resendError.classList.remove('hidden');
+      } finally {
+        // Reset button state
+        resendBtn.disabled = false;
+        resendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Resend Verification Email';
+      }
+    });
+    
+    function startResendCountdown() {
+      const resendBtn = document.getElementById('resendVerificationBtn');
+      const countdownTimer = document.getElementById('countdownTimer');
+      const countdownSeconds = document.getElementById('countdownSeconds');
+      
+      // Calculate wait time with exponential backoff
+      const waitTime = BASE_WAIT_TIME * Math.pow(2, resendAttempts);
+      let secondsLeft = waitTime;
+      
+      // Hide button and show countdown
+      resendBtn.classList.add('hidden');
+      countdownTimer.classList.remove('hidden');
+      
+      // Update countdown display
+      countdownSeconds.textContent = secondsLeft;
+      
+      // Clear any existing intervals
+      if (countdownIntervalId) {
+        clearInterval(countdownIntervalId);
+      }
+      
+      // Start countdown
+      countdownIntervalId = setInterval(() => {
+        secondsLeft--;
+        countdownSeconds.textContent = secondsLeft;
+        
+        if (secondsLeft <= 0) {
+          clearInterval(countdownIntervalId);
+          // Show button and hide countdown
+          resendBtn.classList.remove('hidden');
+          countdownTimer.classList.add('hidden');
+        }
+      }, 1000);
+    }
+    
+    // Clean up intervals when page unloads
+    window.addEventListener('beforeunload', () => {
+      if (countdownIntervalId) {
+        clearInterval(countdownIntervalId);
+      }
+      if (resendTimeoutId) {
+        clearTimeout(resendTimeoutId);
+      }
+    });
   </script>
+  
+  <style>
+    .verification-section {
+      text-align: center;
+    }
+    
+    .verification-header {
+      margin-bottom: 2rem;
+    }
+    
+    .verification-header i {
+      font-size: 3rem;
+      color: #4CAF50;
+      margin-bottom: 1rem;
+    }
+    
+    .verification-header h2 {
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+    
+    .verification-actions {
+      margin-bottom: 2rem;
+    }
+    
+    .verification-actions p {
+      margin-bottom: 1rem;
+      color: #666;
+    }
+    
+    .resend-btn {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .resend-btn:hover {
+      background: #1976D2;
+      transform: translateY(-2px);
+    }
+    
+    .resend-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .countdown-timer {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    
+    .countdown-timer i {
+      color: #FF9800;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </body>
 </html>

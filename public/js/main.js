@@ -11,11 +11,12 @@ import {
   setCurrentWorkout,
   testModels 
 } from './workout.js';
-import { logoutUser, sendVerificationEmail } from './auth.js';
+import { logoutUser } from './auth.js';
 
 // Global state
 let currentUser = null;
 let currentWorkout = '';
+let currentSection = 'generator';
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -27,11 +28,42 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
   onAuthStateChanged(auth, (user) => {
     currentUser = user;
-    updateAuthUI(user);
-    if (user && user.emailVerified) {
-      loadUserWorkouts();
-    }
+    handleAuthStateChange(user);
   });
+}
+
+// Handle authentication state changes
+function handleAuthStateChange(user) {
+  const loadingScreen = document.getElementById('loadingScreen');
+  const accessDenied = document.getElementById('accessDenied');
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.querySelector('.main-content');
+  
+  // Hide loading screen
+  if (loadingScreen) {
+    loadingScreen.classList.add('hidden');
+  }
+  
+  if (user && user.emailVerified) {
+    // User is authenticated and verified - show the app
+    if (accessDenied) accessDenied.classList.add('hidden');
+    if (sidebar) sidebar.classList.remove('hidden');
+    if (mainContent) mainContent.classList.add('has-sidebar');
+    
+    // Update user info in sidebar
+    const sidebarUserEmail = document.getElementById('sidebarUserEmail');
+    if (sidebarUserEmail) {
+      sidebarUserEmail.textContent = user.email;
+    }
+    
+    // Show default section and load workouts
+    showWorkoutGenerator();
+    loadUserWorkouts();
+    
+  } else {
+    // User is not authenticated or not verified - redirect to login
+    window.location.href = 'auth/login.html';
+  }
 }
 
 // Setup all event listeners
@@ -59,43 +91,46 @@ function setupEventListeners() {
   exampleChips.forEach(chip => {
     chip.addEventListener('click', () => useExample(chip));
   });
-  
-  // Resend verification email
-  const resendBtn = document.getElementById('resendVerificationBtn');
-  if (resendBtn) {
-    resendBtn.addEventListener('click', handleResendVerification);
-  }
 }
 
-// Update UI based on authentication state
-function updateAuthUI(user) {
-  const authSection = document.getElementById('authSection');
-  const userInfo = document.getElementById('userInfo');
-  const verificationNotice = document.getElementById('verificationNotice');
-  const savedWorkoutsSection = document.getElementById('savedWorkoutsSection');
+// Navigation functions
+window.showWorkoutGenerator = function() {
+  hideAllSections();
+  const section = document.getElementById('workoutGeneratorSection');
+  if (section) {
+    section.classList.remove('hidden');
+  }
+  updateNavigation('generator');
+  currentSection = 'generator';
+};
+
+window.showSavedWorkouts = function() {
+  hideAllSections();
+  const section = document.getElementById('savedWorkoutsSection');
+  if (section) {
+    section.classList.remove('hidden');
+  }
+  updateNavigation('saved');
+  currentSection = 'saved';
+  loadUserWorkouts();
+};
+
+function hideAllSections() {
+  const sections = document.querySelectorAll('.content-section');
+  sections.forEach(section => {
+    section.classList.add('hidden');
+  });
+}
+
+function updateNavigation(activeSection) {
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(item => {
+    item.classList.remove('active');
+  });
   
-  if (user) {
-    // User is logged in
-    if (authSection) authSection.classList.add('hidden');
-    if (userInfo) {
-      userInfo.classList.remove('hidden');
-      const userEmailDisplay = document.getElementById('userEmailDisplay');
-      if (userEmailDisplay) userEmailDisplay.textContent = user.email;
-    }
-    
-    if (!user.emailVerified) {
-      if (verificationNotice) verificationNotice.classList.remove('hidden');
-      if (savedWorkoutsSection) savedWorkoutsSection.classList.add('hidden');
-    } else {
-      if (verificationNotice) verificationNotice.classList.add('hidden');
-      if (savedWorkoutsSection) savedWorkoutsSection.classList.remove('hidden');
-    }
-  } else {
-    // User is not logged in
-    if (authSection) authSection.classList.remove('hidden');
-    if (userInfo) userInfo.classList.add('hidden');
-    if (verificationNotice) verificationNotice.classList.add('hidden');
-    if (savedWorkoutsSection) savedWorkoutsSection.classList.add('hidden');
+  const activeItem = document.querySelector(`.nav-item[onclick*="${activeSection === 'generator' ? 'Generator' : 'SavedWorkouts'}"]`);
+  if (activeItem) {
+    activeItem.classList.add('active');
   }
 }
 
@@ -131,8 +166,8 @@ async function handleGenerateWorkout() {
     // Display the formatted workout
     outputElement.innerHTML = formatWorkoutOutput(workoutText);
     
-    // Show save section if user is logged in and verified
-    if (currentUser && currentUser.emailVerified && saveWorkoutSection) {
+    // Show save section
+    if (saveWorkoutSection) {
       saveWorkoutSection.classList.add('show');
     }
     
@@ -173,7 +208,11 @@ async function handleSaveWorkout() {
     await saveWorkout(workoutName, currentWorkout);
     showSuccess('Workout saved successfully!');
     workoutNameInput.value = '';
-    loadUserWorkouts();
+    
+    // Refresh saved workouts if we're viewing that section
+    if (currentSection === 'saved') {
+      loadUserWorkouts();
+    }
   } catch (error) {
     showError(error.message);
   }
@@ -181,21 +220,14 @@ async function handleSaveWorkout() {
 
 // Handle logout
 async function handleLogout() {
-  try {
-    await logoutUser();
-    showSuccess('Logged out successfully');
-  } catch (error) {
-    showError('Failed to logout');
-  }
-}
-
-// Handle resend verification email
-async function handleResendVerification() {
-  try {
-    await sendVerificationEmail();
-    showSuccess('Verification email sent!');
-  } catch (error) {
-    showError('Failed to send verification email');
+  if (confirm('Are you sure you want to logout?')) {
+    try {
+      await logoutUser();
+      showSuccess('Logged out successfully');
+      // Redirect will happen automatically via auth state change
+    } catch (error) {
+      showError('Failed to logout');
+    }
   }
 }
 
@@ -204,11 +236,28 @@ async function loadUserWorkouts() {
   const savedWorkoutsList = document.getElementById('savedWorkoutsList');
   if (!savedWorkoutsList) return;
   
+  // Show loading state
+  savedWorkoutsList.innerHTML = `
+    <div class="loading-workouts">
+      <div class="spinner"></div>
+      <p>Loading your saved workouts...</p>
+    </div>
+  `;
+  
   try {
     const workouts = await loadSavedWorkouts();
     
     if (workouts.length === 0) {
-      savedWorkoutsList.innerHTML = '<p class="no-workouts">No saved workouts yet. Generate and save your first workout!</p>';
+      savedWorkoutsList.innerHTML = `
+        <div class="no-workouts">
+          <i class="fas fa-dumbbell"></i>
+          <h3>No saved workouts yet</h3>
+          <p>Generate and save your first workout to see it here!</p>
+          <button onclick="showWorkoutGenerator()" class="generate-workout-btn">
+            <i class="fas fa-plus"></i> Generate Workout
+          </button>
+        </div>
+      `;
       return;
     }
     
@@ -219,16 +268,19 @@ async function loadUserWorkouts() {
         workout.createdAt.toDate().toLocaleDateString() : 
         new Date(workout.createdAt).toLocaleDateString();
       
-      const preview = workout.content.substring(0, 100) + '...';
+      const preview = workout.content.substring(0, 150) + '...';
       
       const workoutItem = document.createElement('div');
       workoutItem.className = 'workout-item';
       workoutItem.id = `workout-${workout.id}`;
       workoutItem.innerHTML = `
         <div class="workout-header">
-          <div>
-            <div class="workout-title">${escapeHtml(workout.name)}</div>
-            <div class="workout-date">Saved on ${workoutDate}</div>
+          <div class="workout-info">
+            <h3 class="workout-title">${escapeHtml(workout.name)}</h3>
+            <div class="workout-date">
+              <i class="fas fa-calendar-alt"></i>
+              Saved on ${workoutDate}
+            </div>
           </div>
           <div class="workout-actions">
             <button class="view-btn" onclick="viewWorkout('${workout.id}')">
@@ -251,8 +303,8 @@ async function loadUserWorkouts() {
       <div class="error">
         <i class="fas fa-exclamation-circle"></i>
         <div class="error-content">
-          <div class="error-title">Error</div>
-          Failed to load saved workouts
+          <div class="error-title">Error Loading Workouts</div>
+          <div>Failed to load your saved workouts. Please try refreshing the page.</div>
         </div>
       </div>
     `;
@@ -263,11 +315,17 @@ async function loadUserWorkouts() {
 window.viewWorkout = async function(workoutId) {
   try {
     const workout = await getWorkout(workoutId);
-    const outputElement = document.getElementById('output');
-    const saveWorkoutSection = document.getElementById('saveWorkoutSection');
     
+    // Switch to generator section
+    showWorkoutGenerator();
+    
+    // Set the workout content
     setCurrentWorkout(workout.content);
     currentWorkout = workout.content;
+    
+    // Display the workout
+    const outputElement = document.getElementById('output');
+    const saveWorkoutSection = document.getElementById('saveWorkoutSection');
     
     outputElement.innerHTML = formatWorkoutOutput(workout.content);
     
@@ -277,6 +335,8 @@ window.viewWorkout = async function(workoutId) {
     
     // Scroll to the workout
     outputElement.scrollIntoView({ behavior: 'smooth' });
+    
+    showSuccess(`Loaded workout: ${workout.name}`);
     
   } catch (error) {
     showError('Failed to load workout');
@@ -301,10 +361,10 @@ async function deleteWorkoutItem(workoutId) {
       workoutElement.remove();
     }
     
-    // Check if list is empty
+    // Check if list is empty and reload
     const savedWorkoutsList = document.getElementById('savedWorkoutsList');
     if (savedWorkoutsList && savedWorkoutsList.children.length === 0) {
-      savedWorkoutsList.innerHTML = '<p class="no-workouts">No saved workouts yet. Generate and save your first workout!</p>';
+      loadUserWorkouts();
     }
     
     showSuccess('Workout deleted successfully');

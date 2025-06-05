@@ -10,3 +10,5 @@ yarn-error.log*
 # Optional
 .DS_Store
 .runtimeconfig.json
+firebase-debug.log
+
