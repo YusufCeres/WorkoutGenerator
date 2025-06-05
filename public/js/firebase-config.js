@@ -24,15 +24,15 @@ import {
   connectFirestoreEmulator 
 } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
 
-// Firebase configuration - Replace with your actual config
+// Firebase configuration - FIXED: Use actual config values, not functions.config()
 const firebaseConfig = {
-   apiKey: functions.config().app.api_key,
-  authDomain: functions.config().app.auth_domain,
-  projectId: functions.config().app.project_id,
-  storageBucket: functions.config().app.storage_bucket,
-  messagingSenderId: functions.config().app.messaging_sender_id,
-  appId: functions.config().app.app_id,
-  measurementId: functions.config().app.measurement_id,
+  apiKey: "AIzaSyBjonXbOCwbc3IF3ij-agGIr95HzFBFVt0",
+  authDomain: "ai-workout-generator-40443.firebaseapp.com",
+  projectId: "ai-workout-generator-40443",
+  storageBucket: "ai-workout-generator-40443.firebasestorage.app",
+  messagingSenderId: "546286551368",
+  appId: "1:546286551368:web:b2e731d4e33736dbed337d",
+  measurementId: "G-SDYM76DQZF"
 };
 
 // Initialize Firebase
@@ -41,12 +41,20 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
 
-// Connect to emulators if running locally
+// Connect to emulators ONLY in development (localhost with specific ports)
 const isLocalhost = window.location.hostname === 'localhost' || 
                    window.location.hostname === '127.0.0.1' ||
                    window.location.hostname === '0.0.0.0';
 
-if (isLocalhost) {
+// Only connect to emulators when running on localhost with development ports
+const isDevelopment = isLocalhost && (
+  window.location.port === '5000' || 
+  window.location.port === '3000' || 
+  window.location.port === '8080' ||
+  window.location.href.includes('firebase')
+);
+
+if (isDevelopment) {
   console.log('Connecting to Firebase emulators...');
   
   // Connect to Auth Emulator
@@ -79,7 +87,7 @@ if (isLocalhost) {
     }
   }
 } else {
-  console.log('Running in production mode');
+  console.log('Running in production mode - using live Firebase services');
 }
 
 // Export Firebase services
