@@ -13,7 +13,29 @@ const AI_MODELS = [
 let currentModelIndex = 0;
 let currentWorkout = '';
 
-// Primary method: Using HTTP Function (Better CORS handling)
+// Determine the correct function URL based on environment
+function getFunctionUrl() {
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.hostname === '0.0.0.0';
+
+  const isDevelopment = isLocalhost && (
+    window.location.port === '5000' || 
+    window.location.port === '3000' || 
+    window.location.port === '8080' ||
+    window.location.href.includes('firebase')
+  );
+
+  if (isDevelopment) {
+    // Use local emulator URL if available, otherwise use production
+    return 'http://localhost:5001/ai-workout-generator-40443/us-central1/generateWorkoutHTTP';
+  } else {
+    // Use production URL
+    return 'https://us-central1-ai-workout-generator-40443.cloudfunctions.net/generateWorkoutHTTP';
+  }
+}
+
+// Primary method: Using HTTP Function with environment-aware URL
 export async function generateWorkout(prompt) {
   try {
     console.log('Starting workout generation with HTTP method...');
@@ -27,7 +49,10 @@ export async function generateWorkout(prompt) {
       console.log('Auth token obtained');
     }
 
-    const response = await fetch('https://us-central1-ai-workout-generator-40443.cloudfunctions.net/generateWorkoutHTTP', {
+    const functionUrl = getFunctionUrl();
+    console.log('Using function URL:', functionUrl);
+
+    const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -63,7 +88,18 @@ export async function generateWorkout(prompt) {
     
     // Handle specific error types
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Network error. Please check your internet connection.');
+      // If we're in development and the fetch failed, try the callable function as backup
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('Fetch failed in development, trying callable function...');
+        try {
+          return await generateWorkoutCallable(prompt);
+        } catch (callableError) {
+          console.log('Callable function also failed, using local fallback');
+          return generateLocalFallback(prompt);
+        }
+      } else {
+        throw new Error('Network error. Please check your internet connection.');
+      }
     }
     
     if (error.message.includes('CORS')) {

@@ -103,20 +103,38 @@ exports.generateWorkout = functions.https.onCall(async (data, context) => {
   }
 });
 
-// HTTP Function with proper CORS handling (alternative approach)
+// HTTP Function with improved CORS handling for development and production
 exports.generateWorkoutHTTP = functions.https.onRequest(async (req, res) => {
-  // Handle CORS properly
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': 'https://ai-workout-generator-40443.web.app',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Credentials': 'true'
-  };
+  // Define allowed origins
+  const allowedOrigins = [
+    'https://ai-workout-generator-40443.web.app',
+    'https://ai-workout-generator-40443.firebaseapp.com',
+    'http://localhost:5000',
+    'http://127.0.0.1:5000',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080'
+  ];
 
-  // Set CORS headers
-  Object.keys(corsHeaders).forEach(key => {
-    res.set(key, corsHeaders[key]);
-  });
+  // Get the origin from the request
+  const origin = req.headers.origin;
+  
+  // Set CORS headers dynamically
+  if (allowedOrigins.includes(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+  } else if (process.env.NODE_ENV === 'development' || functions.config().environment?.mode === 'development') {
+    // In development mode, allow any origin
+    res.set('Access-Control-Allow-Origin', '*');
+  } else {
+    // In production, default to your main domain
+    res.set('Access-Control-Allow-Origin', 'https://ai-workout-generator-40443.web.app');
+  }
+  
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.set('Access-Control-Allow-Credentials', 'true');
+  res.set('Access-Control-Max-Age', '3600'); // Cache preflight for 1 hour
   
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
@@ -153,6 +171,7 @@ exports.generateWorkoutHTTP = functions.https.onRequest(async (req, res) => {
 
     console.log('Generating workout for user:', userId || 'unauthenticated');
     console.log('Prompt:', prompt);
+    console.log('Request origin:', origin);
 
     // Get API key from Firebase config
     const apiKey = functions.config().together?.api_key;
