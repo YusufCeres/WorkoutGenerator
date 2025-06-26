@@ -1,10 +1,11 @@
 # AI Workout Generator
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-blue)](https://ai-workout-generator-40443.web.app)
 [![Firebase](https://img.shields.io/badge/Firebase-Hosting-orange)](https://firebase.google.com/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
 A personalized AI-powered workout generator that creates custom fitness plans based on your specific requirements. Built with vanilla JavaScript, HTML, and CSS, and powered by Firebase for authentication and data storage.
+
+> **Note:** This project is not currently hosted online. To use it, follow the setup instructions below to run it locally or deploy to your own Firebase project.
 
 ## 🌟 Features
 
@@ -35,9 +36,51 @@ A personalized AI-powered workout generator that creates custom fitness plans ba
 - **Example prompts** to help users get started
 - **Error handling** with user-friendly messages
 
-## 🚀 Live Demo
+## 🚀 Getting Started
 
-Visit the live application: **[ai-workout-generator-40443.web.app](https://ai-workout-generator-40443.web.app)**
+This project is not live. To run it locally or deploy it yourself:
+
+### Prerequisites
+- Firebase account
+- Together AI API key (optional, has fallback)
+- Node.js (for Firebase Functions)
+
+### Local Development
+
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd ai-workout-generator
+   ```
+2. **Install Firebase CLI**
+   ```bash
+   npm install -g firebase-tools
+   ```
+3. **Login to Firebase**
+   ```bash
+   firebase login
+   ```
+4. **Initialize Firebase project**
+   ```bash
+   firebase init
+   ```
+5. **Configure Firebase**
+   - Update `firebase-config.js` with your project credentials
+   - Enable Authentication and Firestore in Firebase Console
+6. **Set API Key (Optional)**
+   ```bash
+   firebase functions:config:set together.api_key="your-api-key"
+   ```
+7. **Deploy Functions**
+   ```bash
+   cd functions
+   npm install
+   firebase deploy --only functions
+   ```
+8. **Deploy Hosting**
+   ```bash
+   firebase deploy --only hosting
+   ```
 
 ## 🛠️ Technology Stack
 
@@ -106,57 +149,6 @@ await saveWorkout(workoutName, workoutContent);
 const workouts = await loadSavedWorkouts();
 ```
 
-## 🔧 Setup & Installation
-
-### Prerequisites
-- Firebase account
-- Together AI API key (optional, has fallback)
-- Node.js (for Firebase Functions)
-
-### Local Development
-
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd ai-workout-generator
-   ```
-
-2. **Install Firebase CLI**
-   ```bash
-   npm install -g firebase-tools
-   ```
-
-3. **Login to Firebase**
-   ```bash
-   firebase login
-   ```
-
-4. **Initialize Firebase project**
-   ```bash
-   firebase init
-   ```
-
-5. **Configure Firebase**
-   - Update `firebase-config.js` with your project credentials
-   - Enable Authentication and Firestore in Firebase Console
-
-6. **Set API Key (Optional)**
-   ```bash
-   firebase functions:config:set together.api_key="your-api-key"
-   ```
-
-7. **Deploy Functions**
-   ```bash
-   cd functions
-   npm install
-   firebase deploy --only functions
-   ```
-
-8. **Deploy Hosting**
-   ```bash
-   firebase deploy --only hosting
-   ```
-
 ## 🎮 Usage Examples
 
 ### Basic Workout Request
@@ -207,7 +199,7 @@ const workouts = await loadSavedWorkouts();
 
 ## 🚀 Deployment
 
-The application is deployed on Firebase Hosting with automatic SSL and global CDN:
+You can deploy the application to your own Firebase Hosting with automatic SSL and global CDN:
 
 ```bash
 # Deploy everything
